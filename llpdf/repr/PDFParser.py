@@ -62,18 +62,23 @@ class PDFParser(tpg.VerboseParser):
 		;
 
 		PDFDict/d -> start_dict								$ d = dict()
+						comment?
 						(
 							PDFName/k PDFExpression/v		$ d[k] = v
 						)*
+						comment?
 						end_dict
 		;
 
 		PDFArray/a -> start_array							$ a = list()
+						comment?
 						( PDFExpression/e					$ a.append(e)
-						)* end_array
+						)*
+						comment?
+						end_array
 		;
 
-		PDFName/e -> pdfname_token/e
+		PDFName/e -> pdfname_token/e comment?
 		;
 
 		PDFXRef/e -> integer/a integer/b 'R'				$ e = PDFXRef(a, b)

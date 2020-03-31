@@ -141,6 +141,12 @@ class PDFParserTest(unittest.TestCase):
 >>"""
 		PDFParser.parse(data)
 
+	def test_pdf_comment(self):
+		self.assertEqual(PDFParser.parse("""<<
+			/Length 213 0 R		% Foobar
+		>>"""), {
+			PDFName("/Length"):			PDFXRef(213, 0),
+		})
 
 #	def test_parse_error(self):
 #		with open("parse_error.txt") as f:
