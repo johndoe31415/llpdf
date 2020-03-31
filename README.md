@@ -1,9 +1,7 @@
 # llpdf
-llpdf is a PDF manipulation library that I originally wrote for pdfminify, but
-that has other purposes as well for which I've now made it its own separate
-project. Note that the API is changed to that of pdfminify so that pdfminify
-isn't actually compatible anymore with the latest llpdf version. It's something
-I anticipate fixing soonish.
+llpdf is a low-level PDF manipulation library that I originally wrote for
+pdfminify, but that has other purposes as well for which I've now made it its
+own separate project.
 
 llpdf uses its own PDF parser because for the particular purpose of low
 manipulation of PDFs, neither PyPDF2 nor pdfrw (which I both tried to use)
