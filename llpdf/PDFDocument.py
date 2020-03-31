@@ -1,5 +1,5 @@
 #	llpdf - Low-level PDF library in native Python.
-#	Copyright (C) 2016-2016 Johannes Bauer
+#	Copyright (C) 2016-2020 Johannes Bauer
 #
 #	This file is part of llpdf.
 #
@@ -37,6 +37,10 @@ class PDFDocument(object):
 		self._objs = { }
 		self._xref_table = XRefTable()
 		self._trailer = { }
+
+	@property
+	def objcount(self):
+		return len(self._objs)
 
 	@property
 	def xref_table(self):
@@ -264,7 +268,6 @@ class PDFDocument(object):
 		return image
 
 	def get_info(self, key):
-		print(self.trailer)
 		info_node_xref = self.trailer[PDFName("/Info")]
 		info_node = self.lookup(info_node_xref)
 		key = PDFName("/" + key)
@@ -316,3 +319,41 @@ class PDFDocument(object):
 		self._objs[(obj.objid, obj.gennum)] = obj
 		return self
 
+	def _fix_object_sizes(self):
+		self._log.debug("Fixing object sizes of indirect referenced /Length fields")
+		for obj in self.stream_objects:
+			length_xref = obj.content.get(PDFName("/Length"))
+			if (length_xref is not None) and isinstance(length_xref, PDFXRef):
+				length_obj = self.lookup(length_xref)
+				length = length_obj.content
+				if not isinstance(length, int):
+					self._log.warning("Indirect length reference supposed to point to integer value, but points to %s (%s)", length_obj, length)
+				else:
+					if length != len(obj):
+						obj.truncate(length)
+
+	def _unpack_objstrm(self, objstrm_obj):
+		data = objstrm_obj.stream.decode()
+		objcnt = objstrm_obj.content[PDFName("/N")]
+		first = objstrm_obj.content[PDFName("/First")]
+		self._log.debug("Object stream %s contains %d objects starting at offset %d.", objstrm_obj, objcnt, first)
+
+		header = data[:first]
+		data = data[first:]
+		header = [ int(value) for value in header.decode("ascii").replace("\n", " ").split() ]
+		for idx in range(0, len(header), 2):
+			(objid, sub_offset) = (header[idx], header[idx + 1])
+			if idx + 3 >= len(header):
+				# Last object
+				sub_obj_data = data[sub_offset : ]
+			else:
+				next_sub_offset = header[idx + 3]
+				sub_obj_data = data[sub_offset : next_sub_offset]
+			sub_obj = PDFObject(objid, 0, sub_obj_data)
+			self.replace_object(sub_obj)
+		self.delete_object(objstrm_obj.objid, objstrm_obj.gennum)
+
+	def unpack_objstrms(self):
+		for obj in self.objstrm_objects:
+			self._unpack_objstrm(obj)
+		self._fix_object_sizes()

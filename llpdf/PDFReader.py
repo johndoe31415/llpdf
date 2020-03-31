@@ -1,5 +1,5 @@
 #	llpdf - Low-level PDF library in native Python.
-#	Copyright (C) 2016-2016 Johannes Bauer
+#	Copyright (C) 2016-2020 Johannes Bauer
 #
 #	This file is part of llpdf.
 #
@@ -24,6 +24,7 @@ import logging
 from llpdf.PDFDocument import PDFDocument
 from llpdf.repr import PDFParser
 from .types.PDFObject import PDFObject
+from llpdf.types.PDFName import PDFName
 from .types.XRefTable import XRefTable
 from .FileRepr import StreamRepr
 
@@ -78,7 +79,7 @@ class PDFReader(object):
 				pdf.trailer = trailer
 			elif line == "startxref":
 				xref_offset = int(f.readline())
-				if pdf.trailer is None:
+				if len(pdf.trailer) == 0:
 					# Compressed XRef directory
 					with f.tempseek(xref_offset) as marker:
 						self._log.trace("Will parse XRef stream at offset 0x%x referenced from 0x%x." % (xref_offset, marker.prev_offset))
@@ -86,9 +87,10 @@ class PDFReader(object):
 						if xref_object is None:
 							self._log.error("Could not parse a valid type /XRef object at 0x%x. Corrupt PDF?", xref_offset)
 						else:
-							self._trailer = xref_object.content
-							assert(self._trailer[PDFName("/Type")] == PDFName("/XRef"))
-							self._xref_table.parse_xref_object(xref_object.stream.decode(), self._trailer.get(PDFName("/Index")), self._trailer[PDFName("/W")])
+							trailer = xref_object.content
+							assert(trailer[PDFName("/Type")] == PDFName("/XRef"))
+							pdf.trailer = trailer
+							pdf.xref_table.parse_xref_object(xref_object.stream.decode(), pdf.trailer.get(PDFName("/Index")), pdf.trailer[PDFName("/W")])
 			elif line == "%%EOF":
 				self._log.debug("Hit EOF marker at 0x%x.", f.tell())
 				break
@@ -103,7 +105,8 @@ class PDFReader(object):
 		self._log.debug("Started reading trailer at 0x%x.", f.tell())
 		trailer_data = f.read_until_token(b"startxref", rewind = True)
 		trailer_data = trailer_data.decode("latin1")
-		return PDFParser.parse(trailer_data)
+		trailer = PDFParser.parse(trailer_data)
+		return trailer
 
 	def _get_pages_from_pages_obj(self, pages_obj):
 		pagecontent_xrefs = pages_obj.content[PDFName("/Kids")]
@@ -115,45 +118,6 @@ class PDFReader(object):
 				yield from self._get_pages_from_pages_obj(page)
 			else:
 				raise Exception("Page object %s contains neither page nor pages (/Type = %s)." % (pages_obj, page.content[PDFName("/Type")]))
-
-
-	def _fix_object_sizes(self):
-		self._log.debug("Fixing object sizes of indirect referenced /Length fields")
-		for obj in self.stream_objects:
-			length_xref = obj.content.get(PDFName("/Length"))
-			if (length_xref is not None) and isinstance(length_xref, PDFXRef):
-				length_obj = self.lookup(length_xref)
-				length = length_obj.content
-				if not isinstance(length, int):
-					self._log.warning("Indirect length reference supposed to point to integer value, but points to %s (%s)", length_obj, length)
-				else:
-					if length != len(obj):
-						obj.truncate(length)
-
-	def _unpack_objstrm(self, objstrm_obj):
-		data = objstrm_obj.stream.decode()
-		objcnt = objstrm_obj.content[PDFName("/N")]
-		first = objstrm_obj.content[PDFName("/First")]
-		self._log.debug("Object stream %s contains %d objects starting at offset %d.", objstrm_obj, objcnt, first)
-
-		header = data[:first]
-		data = data[first:]
-		header = [ int(value) for value in header.decode("ascii").replace("\n", " ").split() ]
-		for idx in range(0, len(header), 2):
-			(objid, sub_offset) = (header[idx], header[idx + 1])
-			if idx + 3 >= len(header):
-				# Last object
-				sub_obj_data = data[sub_offset : ]
-			else:
-				next_sub_offset = header[idx + 3]
-				sub_obj_data = data[sub_offset : next_sub_offset]
-			sub_obj = PDFObject(objid, 0, sub_obj_data)
-			self.replace_object(sub_obj)
-		self.delete_object(objstrm_obj.objid, objstrm_obj.gennum)
-
-	def _unpack_objstrms(self):
-		for obj in self.objstrm_objects:
-			self._unpack_objstrm(obj)
 
 #	def read_stream(self):
 #		self._f.read_until([ b"stream\r\n", b"stream\n" ])
@@ -172,8 +136,7 @@ class PDFReader(object):
 			self._log.warning("Warning: Header indicates %s, unknown if we can handle this.", hdr_version.decode())
 
 		self._read_pdf_body(f, pdf)
-#		self._log.debug("Finished reading PDF file. %d objects found.", len(self._objs))
-#		self._unpack_objstrms()
-#		self._log.debug("Finished unpacking all object streams in file. %d objects found total.", len(self._objs))
-#		self._fix_object_sizes()
+		self._log.debug("Finished reading PDF file. %d objects found.", pdf.objcount)
+		pdf.unpack_objstrms()
+		self._log.debug("Finished unpacking all object streams in file. %d objects found total.", pdf.objcount)
 		return pdf

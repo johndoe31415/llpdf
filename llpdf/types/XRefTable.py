@@ -1,5 +1,5 @@
 #	llpdf - Low-level PDF library in native Python.
-#	Copyright (C) 2016-2016 Johannes Bauer
+#	Copyright (C) 2016-2020 Johannes Bauer
 #
 #	This file is part of llpdf.
 #
