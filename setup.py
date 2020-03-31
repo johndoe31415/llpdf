@@ -11,7 +11,7 @@ setup(
 	author = "Johannes Bauer",
 	author_email = "joe@johannes-bauer.com",
 	url = "https://github.com/johndoe31415/llpdf",
-	download_url = "https://github.com/johndoe31415/llpdf/archive/TODO.tar.gz",
+	download_url = "https://github.com/johndoe31415/llpdf/archive/0.0.1.tar.gz",
 	keywords = [ "pdf", "reader", "writer", "document", "parser" ],
 	classifiers = [
 		"Development Status :: 5 - Production/Stable",
