@@ -1,4 +1,4 @@
-#	llpdf - Tool to minify PDF files.
+#	llpdf - Low-level PDF library in native Python.
 #	Copyright (C) 2016-2019 Johannes Bauer
 #
 #	This file is part of llpdf.
