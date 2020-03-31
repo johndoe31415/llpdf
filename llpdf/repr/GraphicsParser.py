@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #	llpdf - Low-level PDF library in native Python.
-#	Copyright (C) 2016-2016 Johannes Bauer
+#	Copyright (C) 2016-2020 Johannes Bauer
 #
 #	This file is part of llpdf.
 #
@@ -208,6 +208,7 @@ class GraphicsParser(tpg.VerboseParser):
 		token end_array '\]';
 		token float   '-?\d*\.\d+'							$ float
 		token integer   '-?\d+'								$ int
+		token bool '[tT]rue|[fF]alse'						$ ParseTools.to_bool
 		token pdfname_token '/[^\s/<>\[\]()]*'				$ PDFName
 		token string '\(([^\)\\]+|\\[\)\(]|\\\d{3})*\)';
 		token hexstring '<[\na-fA-F0-9]*>'					$ ParseTools.to_hexstring
@@ -268,6 +269,7 @@ class GraphicsParser(tpg.VerboseParser):
 		GraphParam/p -> (
 							integer/p
 							| float/p
+							| bool/p
 							| GraphArray/p
 							| string/p
 							| pdfname_token/p
