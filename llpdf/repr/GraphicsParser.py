@@ -200,17 +200,20 @@ class GraphCommand(object):
 
 class GraphicsParser(tpg.VerboseParser):
 	r"""
-		separator space '[\s\n]+';
+		set lexer = ContextSensitiveLexer
+
+		token spc '[\s\n\x00]+';
 
 		token start_dict '<<';
 		token end_dict '>>';
 		token start_array '\[';
 		token end_array '\]';
-		token float   '-?\d*\.\d+'							$ float
-		token integer   '-?\d+'								$ int
+		token float '-?\d*\.\d+'							$ float
+		token integer '-?\d+'								$ int
 		token bool '[tT]rue|[fF]alse'						$ ParseTools.to_bool
 		token pdfname_token '/[^\s/<>\[\]()]*'				$ PDFName
-		token string '\(([^\)\\]+|\\[\)\(]|\\\d{3})*\)';
+		token start_string '\(';
+		token end_string '\)';
 		token hexstring '<[\na-fA-F0-9]*>'					$ ParseTools.to_hexstring
 
 		token cmd_3_0 '(EMC)';
@@ -230,52 +233,70 @@ class GraphicsParser(tpg.VerboseParser):
 		token cmd_1_4 '(K|k|v|y)';
 		token cmd_1_6 '(c)';
 
+		token stringchar_chars '[^\)\\]+'					$ lambda match: match.encode()
+		token stringchar_escoct '\\\d{3}'					$ lambda match: bytes([ int(match[1:], 8) ])
+		token stringchar_escchar '\\[\(\)\\]'				$ lambda match: bytes([ ord(match[1]) ])
+		token stringchar_eol '\\\n'							$ b''
+
 		START/e -> GraphExpression/e
 		;
 
 		GraphExpression/e ->								$ e = list()
 							(
+									spc?
 									GraphCommand/c			$ e.append(c)
-							)*
+							)* spc?
 		;
 
 		GraphCommand/c -> (
-			(cmd_3_0/c | cmd_2_0/c | cmd_1_0/c)																						$ c = GraphCommand(c)
-			| GraphParam/p1 (cmd_3_1/c | cmd_2_1/c | cmd_1_1/c)																		$ c = GraphCommand(c, p1)
-			| GraphParam/p1 GraphParam/p2 (cmd_3_2/c | cmd_2_2/c | cmd_1_2/c)														$ c = GraphCommand(c, p1, p2)
-			| GraphParam/p1 GraphParam/p2 GraphParam/p3 (cmd_3_3/c | cmd_2_3/c)														$ c = GraphCommand(c, p1, p2, p3)
-			| GraphParam/p1 GraphParam/p2 GraphParam/p3 GraphParam/p4 (cmd_3_4/c | cmd_2_4/c | cmd_1_4/c)							$ c = GraphCommand(c, p1, p2, p3, p4)
-			| GraphParam/p1 GraphParam/p2 GraphParam/p3 GraphParam/p4 GraphParam/p5 GraphParam/p6 (cmd_2_6/c | cmd_1_6/c)			$ c = GraphCommand(c, p1, p2, p3, p4, p5, p6)
+			(cmd_3_0/c | cmd_2_0/c | cmd_1_0/c)																				$ c = GraphCommand(c)
+			| GraphParam/p1 (cmd_3_1/c | cmd_2_1/c | cmd_1_1/c)																$ c = GraphCommand(c, p1)
+			| GraphParam/p1 GraphParam/p2 (cmd_3_2/c | cmd_2_2/c | cmd_1_2/c)												$ c = GraphCommand(c, p1, p2)
+			| GraphParam/p1 GraphParam/p2 GraphParam/p3 (cmd_3_3/c | cmd_2_3/c)												$ c = GraphCommand(c, p1, p2, p3)
+			| GraphParam/p1 GraphParam/p2 GraphParam/p3 GraphParam/p4 (cmd_3_4/c | cmd_2_4/c | cmd_1_4/c)					$ c = GraphCommand(c, p1, p2, p3, p4)
+			| GraphParam/p1 GraphParam/p2 GraphParam/p3 GraphParam/p4 GraphParam/p5 GraphParam/p6 (cmd_2_6/c | cmd_1_6/c)	$ c = GraphCommand(c, p1, p2, p3, p4, p5, p6)
 		)
 		;
 
-		GraphName/e -> pdfname_token/e
+		GraphName/e -> spc? pdfname_token/e
 		;
 
 		GraphDict/d -> start_dict							$ d = dict()
 						(
-							GraphName/k GraphParam/v		$ d[k] = v
+							GraphName/k spc? GraphParam/v	$ d[k] = v
 						)*
+						spc?
 						end_dict
 		;
 
 
 		GraphArray/a ->		start_array					$ a = list()
 							(
+								spc?
 								GraphParam/p			$ a.append(p)
-							)* end_array
+							)*
+							end_array spc?
+		;
+
+		GraphString/s ->	start_string				$ s = bytearray()
+							(
+								stringchar_chars/c		$ s += c
+								| stringchar_escoct/c	$ s += c
+								| stringchar_escchar/c	$ s += c
+								| stringchar_eol
+							)* end_string
 		;
 
 		GraphParam/p -> (
-							integer/p
-							| float/p
+							float/p
+							| integer/p
 							| bool/p
 							| GraphArray/p
-							| string/p
+							| GraphString/p
 							| pdfname_token/p
 							| GraphDict/p
 							| hexstring/p
-						)
+						) spc?
 		;
 
 
@@ -287,13 +308,6 @@ def parse(text):
 	return ParseTools.parse_using(text, GraphicsParser)
 
 if __name__ == "__main__":
-	examples = [
-		"q q q",
-		"q q q Q 1 2 3 4 5 6 cm",
-		"/P <</MCID 0 >>BDC",
-	]
-
-#	_CommandList.generate_grammar()
-
-	for example in examples:
-		print(parse(example))
+	with open("parse_test.txt") as f:
+		text = f.read()
+	print(parse(text))

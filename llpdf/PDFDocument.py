@@ -137,7 +137,7 @@ class PDFDocument(object):
 			content_xref = page.content[PDFName("/Contents")]
 			content = self.lookup(content_xref)
 			pagedata = content.stream.decode()
-			pagedata = pagedata.decode("utf-8")
+			pagedata = pagedata.decode("latin1")
 			yield (page, GraphicsParser.parse(pagedata))
 
 	def __getitem__(self, key):

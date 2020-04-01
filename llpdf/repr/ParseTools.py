@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #	llpdf - Low-level PDF library in native Python.
-#	Copyright (C) 2016-2016 Johannes Bauer
+#	Copyright (C) 2016-2020 Johannes Bauer
 #
 #	This file is part of llpdf.
 #
@@ -45,7 +45,7 @@ def interpret_escape_char(text):
 	}.get(text[0 : 2])
 	if result is None:
 		raise Exception("Unknown escape character sequence %s in string input." % (text.encode("utf-8")))
-	return result + text[2:].encode("ascii")
+	return result + text[2:].encode("latin1")
 
 _numeric_regex = re.compile(r"\\(?P<code>\d{1,3})(?P<space>\s*)")
 def interpret_escape_numeric(text):
@@ -64,6 +64,10 @@ def parse_using(text, parser_class):
 		print("-" * 120)
 		print(text.split("\n")[e.line - 1])
 		print((" " * (e.column - 1)) + "^")
+		with open("parse_error.txt", "wb") as f:
+			f.write(text.encode())
+		raise
+	except UnicodeEncodeError as e:
 		with open("parse_error.txt", "wb") as f:
 			f.write(text.encode())
 		raise

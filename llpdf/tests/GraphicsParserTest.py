@@ -1,5 +1,5 @@
 #	llpdf - Low-level PDF library in native Python.
-#	Copyright (C) 2016-2016 Johannes Bauer
+#	Copyright (C) 2016-2020 Johannes Bauer
 #
 #	This file is part of llpdf.
 #
@@ -41,7 +41,7 @@ class GraphicsParserTest(unittest.TestCase):
 
 	def test_array_arg(self):
 		self.assertEqual(GraphicsParser.parse("<</Foo /Bar>>TJ"), [ GraphCommand("TJ", { PDFName("/Foo"): PDFName("/Bar") }) ])
-		self.assertEqual(GraphicsParser.parse(r"[(some in-depth )3(things\).)]TJ"), [ GraphCommand("TJ", [ "(some in-depth )", 3, "(things\).)" ])])
+		self.assertEqual(GraphicsParser.parse(r"[(some in-depth )3(things\).)]TJ"), [ GraphCommand("TJ", [ b"some in-depth ", 3, b"things)." ])])
 
 	def test_real_pdf_data(self):
 		result = GraphicsParser.parse("""
@@ -109,9 +109,31 @@ class GraphicsParserTest(unittest.TestCase):
 			GraphCommand("BT"),
 			GraphCommand("Tm", 0, 66, -66, 0, 167.850006, 107.849998),
 			GraphCommand("Tf", PDFName("/f-0-0"), 1),
-			GraphCommand("TJ", [ "(FOO)", 3, "(BARY )", 3, "(BARFOO)", 3, "(BA)" ]),
+			GraphCommand("TJ", [ b"FOO", 3, b"BARY ", 3, b"BARFOO", 3, b"BA" ]),
 			GraphCommand("Td", 0, -1.121212),
-			GraphCommand("TJ", [ "(MOO KO)", 20, "(KOO)", 21, "(LOLS)", 3, "(KIX)" ]),
+			GraphCommand("TJ", [ b"MOO KO", 20, b"KOO", 21, b"LOLS", 3, b"KIX" ]),
 			GraphCommand("ET"),
 			GraphCommand("Q"),
+		])
+
+	def test_string1(self):
+		self.assertEqual(GraphicsParser.parse("(Foo) gs"), [ GraphCommand("gs", b"Foo") ])
+		self.assertEqual(GraphicsParser.parse("(Foo ) gs"), [ GraphCommand("gs", b"Foo ") ])
+
+	def test_string_escape(self):
+		self.assertEqual(GraphicsParser.parse(r"(Foo \123) gs"), [ GraphCommand("gs", b"Foo S") ])
+		self.assertEqual(GraphicsParser.parse(r"(Foo \123 Bar) gs"), [ GraphCommand("gs", b"Foo S Bar") ])
+
+	def test_string_escaped_char(self):
+		self.assertEqual(GraphicsParser.parse("(Foo \)) gs"), [ GraphCommand("gs", b"Foo )") ])
+		self.assertEqual(GraphicsParser.parse("(Foo \) Bar) gs"), [ GraphCommand("gs", b"Foo ) Bar") ])
+
+	def test_string_eol(self):
+		self.assertEqual(GraphicsParser.parse("(Foo\\\nBar) gs"), [ GraphCommand("gs", b"FooBar") ])
+
+	def test_dict(self):
+		self.assertEqual(GraphicsParser.parse("/Artifact <</Attached [/Top]/Type/Pagination>> BDC"), [ GraphCommand("BDC", PDFName("/Artifact"), {
+				PDFName("/Attached"):	[ PDFName("/Top") ],
+				PDFName("/Type"):		PDFName("/Pagination"),
+			})
 		])
