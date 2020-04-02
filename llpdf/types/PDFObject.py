@@ -1,5 +1,5 @@
 #	llpdf - Low-level PDF library in native Python.
-#	Copyright (C) 2016-2016 Johannes Bauer
+#	Copyright (C) 2016-2020 Johannes Bauer
 #
 #	This file is part of llpdf.
 #
@@ -41,14 +41,20 @@ class PDFObject(Comparable):
 		if rawdata is not None:
 			strm = StreamRepr(rawdata)
 			stream_begin = strm.read_until_token(b"stream")
-			if stream_begin is None:
+			if stream_begin is not None:
+				stream_data = strm.read_until_token(b"endstream")
+				if stream_data is not None:
+					content = stream_begin
+					self._stream = stream_data
+				else:
+					# Probably erroneous stream data ("stream" maybe in dict,
+					# but no "endstream")
+					content = rawdata
+					self._stream = None
+			else:
 				# No stream in this object found, just content
 				content = rawdata
 				self._stream = None
-			else:
-				stream_data = strm.read_until_token(b"endstream")
-				content = stream_begin
-				self._stream = stream_data
 
 			content = content.decode("latin1")
 

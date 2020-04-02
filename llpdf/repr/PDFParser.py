@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #	llpdf - Low-level PDF library in native Python.
-#	Copyright (C) 2016-2016 Johannes Bauer
+#	Copyright (C) 2016-2020 Johannes Bauer
 #
 #	This file is part of llpdf.
 #
@@ -114,4 +114,6 @@ def parse(text):
 	return ParseTools.parse_using(text, PDFParser)
 
 if __name__ == "__main__":
-	print(parse("(Foo( Bar))"))
+	with open("parse_test.txt") as f:
+		text = f.read()
+	print(parse(text))
