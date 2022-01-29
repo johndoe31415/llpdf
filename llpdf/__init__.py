@@ -32,4 +32,4 @@ from llpdf.img.PDFExtImage import PDFExtImage
 from llpdf.highlvl.PDFFunctions import HighlevelPDFFunctions
 from llpdf.highlvl.PDFImageFunctions import HighlevelPDFImageFunctions, PDFImageFormatter
 
-VERSION = "0.0.4-rc0"
+VERSION = "0.0.5"
