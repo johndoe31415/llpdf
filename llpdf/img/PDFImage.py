@@ -1,5 +1,5 @@
 #	llpdf - Low-level PDF library in native Python.
-#	Copyright (C) 2016-2016 Johannes Bauer
+#	Copyright (C) 2016-2021 Johannes Bauer
 #
 #	This file is part of llpdf.
 #
@@ -58,7 +58,11 @@ class PDFImage(object):
 
 		width = xobj.content[PDFName("/Width")]
 		height = xobj.content[PDFName("/Height")]
-		colorspace_info = xobj.content[PDFName("/ColorSpace")]
+		if PDFName("/ColorSpace") in xobj.content:
+			colorspace_info = xobj.content[PDFName("/ColorSpace")]
+		else:
+			cls._log.warning("Warning: No /ColorSpace attribute set in image of XObj %s, assuming /DeviceRGB.", str(xobj))
+			colorspace_info = PDFName("/DeviceRGB")
 		bits_per_component = xobj.content[PDFName("/BitsPerComponent")]
 		filter_info = xobj.content[PDFName("/Filter")]
 		decode = xobj.content.get(PDFName("/Decode"))
@@ -139,6 +143,7 @@ class PDFImage(object):
 			Filter.FlateDecode:		"pnm",
 			Filter.RunLengthDecode:	"pnm",
 			Filter.DCTDecode:		"jpg",
+			Filter.CCITTFaxDecode:	"fax",
 		}[filtering]
 
 	@classmethod
