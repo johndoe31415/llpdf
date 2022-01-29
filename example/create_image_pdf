@@ -1,0 +1,44 @@
+#!/usr/bin/python3
+#	llpdf - Low-level PDF library in native Python.
+#	Copyright (C) 2016-2022 Johannes Bauer
+#
+#	This file is part of llpdf.
+#
+#	llpdf is free software; you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation; this program is ONLY licensed under
+#	version 3 of the License, later versions are explicitly excluded.
+#
+#	llpdf is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#
+#	You should have received a copy of the GNU General Public License
+#	along with llpdf; if not, write to the Free Software
+#	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+#	Johannes Bauer <JohannesBauer@gmx.de>
+#
+
+import sys
+import llpdf
+
+if len(sys.argv) != 3:
+	print("usage: %s [image filename] [output pdf filename]" % (sys.argv[0]))
+	sys.exit(1)
+
+input_image_filename = sys.argv[1]
+output_pdf_filename = sys.argv[2]
+
+pdf = llpdf.PDFDocument()
+hlpdf = llpdf.HighlevelPDFFunctions(pdf)
+
+hlpdf.initialize_pages(author = "Johannes Bauer", title = "This is the title (with special chars äöü)")
+
+imgformatter = llpdf.PDFImageFormatter.midlevel_gray()
+img = imgformatter.reformat(llpdf.PDFExtImage.from_file(input_image_filename))
+
+llpdf.HighlevelPDFImageFunctions(hlpdf.new_page()).put_image(img)
+
+llpdf.PDFWriter().write(pdf, output_pdf_filename)
