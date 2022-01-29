@@ -18,7 +18,7 @@ trees while parsing.
 """
 
 # Toy Parser Generator: A Python parser generator
-# Copyright (C) 2001-2013 Christophe Delord
+# Copyright (C) 2001-2022 Christophe Delord
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -35,23 +35,22 @@ trees while parsing.
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 # For further information about TPG you can visit
-# http://cdsoft.fr/tpg
+# http://cdelord.fr/tpg
 
 # TODO:
 #   - indent and dedent preprocessor
 #
 
 __tpgname__ = 'TPG'
-__version__ = '3.2.2'
-__date__ = '2013-12-29'
+__version__ = '3.2.4'
+__date__ = '2022-01-28'
 __description__ = "A Python parser generator"
 __long_description__ = __doc__
 __license__ = 'LGPL'
 __author__ = 'Christophe Delord'
-__email__ = 'cdsoft.fr'
-__url__ = 'http://cdsoft.fr/tpg/'
+__email__ = 'cdelord.fr'
+__url__ = 'http://cdelord.fr/tpg/'
 
-import parser
 import re
 import sre_parse
 import sys
@@ -61,7 +60,8 @@ __python__ = sys.version_info[0]
 
 if __python__ == 3:
     import collections
-    callable = lambda value: isinstance(value, collections.Callable)
+    if callable is None:
+        callable = lambda value: isinstance(value, collections.Callable)
     exc = lambda: sys.exc_info()[1]
 
 if __python__ == 2:
@@ -1572,7 +1572,7 @@ class TPGParser(tpg.Parser):
                         min = self.PY_EXPR()
                     except tpg.WrongToken:
                         self.lexer.back(_p2)
-                        min = self.PY_Ident("0")
+                        min = self.PY_Ident("0") 
                     _p3 = self.lexer.token()
                     try:
                         self.eat('_tok_16') # ','
@@ -1581,10 +1581,10 @@ class TPGParser(tpg.Parser):
                             max = self.PY_EXPR()
                         except tpg.WrongToken:
                             self.lexer.back(_p4)
-                            max = self.PY_Ident("None")
+                            max = self.PY_Ident("None") 
                     except tpg.WrongToken:
                         self.lexer.back(_p3)
-                        max = min
+                        max = min 
                     self.eat('rcbra') # '\}'
                     a = self.Rep(a, min, max)
         except tpg.WrongToken:
@@ -1613,7 +1613,7 @@ class TPGParser(tpg.Parser):
             args = self.ARGS()
         except tpg.WrongToken:
             self.lexer.back(_p1)
-            args = self.Args()
+            args = self.Args() 
         return args
 
     def ARGS(self, ):
@@ -1733,7 +1733,7 @@ class TPGParser(tpg.Parser):
 
     def code_check(self, code, tok):
         try:
-            parser.suite(code.code)
+            compile(code.code, "-", 'exec')
         except Exception:
             erroneous_code = "\n".join([ "%2d: %s"%(i+1, l) for (i, l) in enumerate(code.code.splitlines()) ])
             raise LexicalError((tok.line, tok.column), "Invalid Python code (%s): \n%s"%(exc, erroneous_code))
