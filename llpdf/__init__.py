@@ -1,5 +1,5 @@
 #	llpdf - Low-level PDF library in native Python.
-#	Copyright (C) 2016-2020 Johannes Bauer
+#	Copyright (C) 2016-2022 Johannes Bauer
 #
 #	This file is part of llpdf.
 #
@@ -32,6 +32,4 @@ from llpdf.img.PDFExtImage import PDFExtImage
 from llpdf.highlvl.PDFFunctions import HighlevelPDFFunctions
 from llpdf.highlvl.PDFImageFunctions import HighlevelPDFImageFunctions, PDFImageFormatter
 
-VERSION_TUPLE = (0, 1, 0)
-VERSION_INT = sum(value << (pos * 8) for (pos, value) in enumerate(reversed(VERSION_TUPLE)))
-VERSION = "%d.%d.%d" % VERSION_TUPLE
+VERSION = "0.0.4-rc0"

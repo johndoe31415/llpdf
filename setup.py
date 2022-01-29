@@ -1,3 +1,4 @@
+import llpdf
 import setuptools
 
 with open("README.md") as f:
@@ -6,7 +7,7 @@ with open("README.md") as f:
 setuptools.setup(
 	name = "llpdf",
 	packages = setuptools.find_packages(),
-	version = "0.0.4",
+	version = llpdf.VERSION,
 	license = "gpl-3.0",
 	description = "Low-level PDF library",
 	long_description = long_description,
@@ -14,7 +15,7 @@ setuptools.setup(
 	author = "Johannes Bauer",
 	author_email = "joe@johannes-bauer.com",
 	url = "https://github.com/johndoe31415/llpdf",
-	download_url = "https://github.com/johndoe31415/llpdf/archive/0.0.4.tar.gz",
+	download_url = "https://github.com/johndoe31415/llpdf/archive/" + llpdf.VERSION + ".tar.gz",
 	keywords = [ "pdf", "reader", "writer", "document", "parser" ],
 	classifiers = [
 		"Development Status :: 5 - Production/Stable",
@@ -26,5 +27,7 @@ setuptools.setup(
 		"Programming Language :: Python :: 3.6",
 		"Programming Language :: Python :: 3.7",
 		"Programming Language :: Python :: 3.8",
+		"Programming Language :: Python :: 3.9",
+		"Programming Language :: Python :: 3.10",
 	],
 )
